@@ -1,0 +1,66 @@
+[
+  {
+    "time": "2025-04-29T13:00:19.638Z",
+    "data": {
+      "userId": "abc123",
+      "productId": "gift_001",
+      "price": 150,
+      "location": {
+        "lat": 55.7558,
+        "lon": 37.6173
+      }
+    }
+  },
+  {
+    "time": "2025-04-29T13:01:44.750Z",
+    "data": {
+      "userId": "Anton Volkov",
+      "productId": "Potato Free",
+      "price": 150,
+      "location": {
+        "lat": 10,
+        "lon": 38
+      }
+    }
+  },
+  {
+    "time": "2025-04-29T13:26:49.821Z",
+    "data": {
+      "salesEmail": "antvolkov84@gmail.com",
+      "salesProductName": "Картофель \"Фри\"",
+      "salesProductQuantity": "300 гр",
+      "salesProductPrice": "500",
+      "receiverPhone": "+380958661514"
+    }
+  },
+  {
+    "time": "2025-05-04T19:35:05.510Z",
+    "data": {
+      "salesEmail": "nata7274988@gmail.com",
+      "salesProductName": "Мороженное",
+      "salesProductQuantity": "100 гр.",
+      "salesProductPrice": "150",
+      "receiverPhone": "+79788041511"
+    }
+  },
+  {
+    "time": "2025-05-04T19:47:21.192Z",
+    "data": {
+      "salesEmail": "antvolkov84@gmail.com",
+      "salesProductName": "Торт \"Пражский\"",
+      "salesProductQuantity": "1 кг ",
+      "salesProductPrice": "1100",
+      "receiverPhone": "+380958661514"
+    }
+  },
+  {
+    "time": "2025-05-04T19:49:14.288Z",
+    "data": {
+      "salesEmail": "antvolkov84@gmail.com",
+      "salesProductName": "Апельсин",
+      "salesProductQuantity": "1 кг",
+      "salesProductPrice": "200",
+      "receiverPhone": "+380958661514"
+    }
+  }
+]
