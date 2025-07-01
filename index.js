@@ -13,18 +13,8 @@ const certificatekey = '/etc/letsencrypt/live/api.stroydoks.ru/privkey.pem';
 const httpsPort = 3667
 const app = express();
 
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://app.stroydoks.ru'
-];
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: ['http://localhost:3000', 'https://api.stroydoks.ru', 'https://app.stroydoks.ru'],
   credentials: true,
 }));
 app.use(express.json());
@@ -54,6 +44,13 @@ app.post('/stroydocs/me', authenticate,  authController.me);
 app.post('/stroydocs/confirmmail', authController.mailConfirm);
 app.post('/stroydocs/forgotpassword', authController.forgetPassword);
 app.post('/stroydocs/changepassword', authController.changePassword);
+app.post('/test', authController.sendForgotPasswordEmail);
 
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🧨 Unhandled Rejection:', reason);
+});
 
+process.on('uncaughtException', (err) => {
+  console.error('💥 Uncaught Exception:', err);
+});
 

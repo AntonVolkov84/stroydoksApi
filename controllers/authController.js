@@ -4,10 +4,12 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import fs from 'fs/promises';
 import path from 'path';
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import crypto from 'crypto'
 import axios from 'axios';
 const USERS_FILE = path.resolve('users.json');
+const resend = new Resend(process.env.EMAIL_PASS);
+
 const readUsers = async () => {
   try {
     const data = await fs.readFile(USERS_FILE, 'utf8');
@@ -75,8 +77,8 @@ export const register = async (req, res) => {
     secure: true,      
     maxAge: 7 * 24 * 60 * 60 * 1000, 
   });
-  await writeUsers(users);
   await sendConfirmationEmail(email, emailToken)
+  await writeUsers(users);
   res.status(201).json({ accessToken });
   
 }catch(error){console.log("register", error.message)}}
@@ -124,35 +126,6 @@ export const me = async(req, res) => {
   if (!user) return res.sendStatus(404);
   res.json({ id: user.id, username: user.username, email: user.email, emailConfirmed: user.emailConfirmed });
 };
-async function sendConfirmationEmail(to, token) {
-  try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      service: "gmail",
-      secure: false,
-      debug: true,
-      logger: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-    });
-    const confirmLink = `http://localhost:3000/confirm-email?token=${token}`;
-    const info = await transporter.sendMail({
-      from: '"Stroydocs" <no-reply@stroydocs.com>',
-      to,
-      subject: "Подтверждение регистрации",
-      text: "Подтверждение регистрации",
-      html: `<p>Нажмите на ссылку, чтобы подтвердить email:</p><a href="${confirmLink}">${confirmLink}</a>`,
-    });
-  } catch (error) {
-    console.error("❌ Ошибка отправки email:", error.message);
-  }
-}
 
 export const mailConfirm = async (req, res) => {
   try{
@@ -199,41 +172,11 @@ export const forgetPassword = async (req, res) => {
       forgotPasswordToken: emailToken,
       forgotPasswordTokenExpires: expires,
     };
-
-  await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2));
   await sendForgotPasswordEmail(email, emailToken)
+  await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2));
   res.status(200).json({ emailToken });
 }catch(error){console.log("register", error.message)}}
 
-async function sendForgotPasswordEmail(to, token) {
-  try {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      service: "gmail",
-      secure: false,
-      debug: true,
-      logger: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-    });
-    const confirmLink = `http://localhost:3000/changepassword?token=${token}`;
-    await transporter.sendMail({
-      from: '"Stroydocs" <no-reply@stroydocs.com>',
-      to,
-      subject: "Замена пароля",
-      text: "Поменяйте ваш пароль",
-      html: `<p>Нажмите на ссылку, чтобы изменить пароль:</p><a href="${confirmLink}">${confirmLink}</a>`,
-    });
-  } catch (error) {
-    console.error("❌ Ошибка отправки email:", error.message);
-  }
-}
 export const changePassword = async (req, res) => {
   try{
   const { token, password } = req.body;
@@ -283,5 +226,40 @@ const verifyRecaptcha = async(token) => {
   } catch (error) {
     console.error("Error verifying reCAPTCHA:", error);
     return null;
+  }
+}
+export async function sendConfirmationEmail(to, token) {
+  const confirmLink = `https://app.stroydoks.ru/confirm-email?token=${token}`;
+
+  try {
+    const data = await resend.emails.send({
+      from: "Stroydoks <no-reply@stroydoks.ru>",
+      to,
+      subject: "Подтверждение регистрации в Stroydoks",
+      html: `<p>Здравствуйте!</p>
+             <p>Для подтверждения регистрации перейдите по ссылке:</p>
+             <a href="${confirmLink}">${confirmLink}</a>`,
+    });
+    console.log("Письмо подтверждения отправлено:", data);
+  } catch (error) {
+    console.error("❌ Ошибка отправки email через Resend:", error);
+    throw error;
+  }
+}
+export async function sendForgotPasswordEmail(to, token) {
+  const resetLink = `https://app.stroydoks.ru/changepassword?token=${token}`;
+  try {
+    const data = await resend.emails.send({
+      from: "Stroydoks <support@stroydoks.ru>",
+      to,
+      subject: "Сброс пароля в Stroydoks",
+      html: `<p>Здравствуйте!</p>
+             <p>Для сброса пароля перейдите по ссылке:</p>
+             <a href="${resetLink}">${resetLink}</a>`,
+    });
+    console.log("Письмо для сброса пароля отправлено:", data);
+  } catch (error) {
+    console.error("❌ Ошибка отправки email для сброса пароля через Resend:", error);
+    throw error;
   }
 }

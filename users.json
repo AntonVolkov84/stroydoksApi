@@ -1,14 +1,8 @@
 [
   {
-    "id": 1751007607871,
-    "username": "testuser",
-    "password": "$2b$10$RoJFmRp3E/8zGlbViguFQO5zLNbjwgzkNtw1MS6.1FhEj7mXLiAOC",
-    "email": "test@example.com"
-  },
-  {
-    "id": 1751220049629,
+    "id": 1751374599735,
     "username": "antvolkov",
-    "password": "$2b$10$hkDqc7FaJjWDoaxKHbM//ekom.yDK4l501QXMQfnEzTEGOTTvQDaW",
+    "password": "$2b$10$QzLtTmzkSYLqmyO1.7fmX.ffLgpw/Dnp1oAkiYwnKNUMP5nmVgu2a",
     "email": "antvolkov84@gmail.com",
     "emailConfirmed": true
   }
