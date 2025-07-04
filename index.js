@@ -43,7 +43,7 @@ app.post('/stroydocs/logout', authenticate,  authController.logout);
 app.post('/stroydocs/me', authenticate,  authController.me);
 app.post('/stroydocs/confirmmail', authController.mailConfirm);
 app.post('/stroydocs/forgotpassword', authController.forgetPassword);
-app.post('/stroydocs/changepassword', authController.changePassword);
+app.post('/stroydocs/changepassword', authenticate, authController.changePassword);
 app.post('/test', authController.sendForgotPasswordEmail);
 
 process.on('unhandledRejection', (reason, promise) => {

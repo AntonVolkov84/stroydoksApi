@@ -200,33 +200,41 @@ export const forgetPassword = async (req, res) => {
 export const changePassword = async (req, res) => {
   try {
     const { token, password } = req.body;
-    if (!token || !password) {
-      return res.status(400).json({ error: 'Токен и пароль обязательны' });
-    }
-    if (password.length < 6) {
+    if (!password || password.length < 6) {
       return res.status(400).json({ success: false, message: "Пароль должен быть минимум 6 символов" });
     }
-    const result = await pool.query(
-      'SELECT * FROM users WHERE forgotpasswordtoken = $1',
-      [token]
-    );
-    if (result.rows.length === 0) {
-      return res.status(400).json({ success: false, message: 'Неверный токен' });
-    }
-    const user = result.rows[0];
-    if (!user.forgotpasswordtokenexpires || new Date(user.forgotpasswordtokenexpires) < new Date()) {
-      return res.status(400).json({ success: false, message: "Токен истёк" });
+    if (token) {
+        const result = await pool.query(
+        'SELECT * FROM users WHERE forgotpasswordtoken = $1',
+        [token]
+      );
+      if (result.rows.length === 0) {
+        return res.status(400).json({ success: false, message: 'Неверный токен' });
+      }
+      const user = result.rows[0];
+      if (!user.forgotpasswordtokenexpires || new Date(user.forgotpasswordtokenexpires) < new Date()) {
+        return res.status(400).json({ success: false, message: "Токен истёк" });
+      }
+      const hashed = await bcrypt.hash(password, 10);
+      await pool.query(
+        `UPDATE users
+         SET password = $1,
+             forgotpasswordtoken = NULL,
+             forgotpasswordtokenexpires = NULL
+         WHERE id = $2`,
+        [hashed, user.id]
+      );
+      return res.status(200).json({ success: true, message: 'Пароль изменен!' });
+    } 
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Необходима авторизация' });
     }
     const hashed = await bcrypt.hash(password, 10);
     await pool.query(
-      `UPDATE users
-       SET password = $1,
-           forgotpasswordtoken = NULL,
-           forgotpasswordtokenexpires = NULL
-       WHERE id = $2`,
-      [hashed, user.id]
+      `UPDATE users SET password = $1 WHERE id = $2`,
+      [hashed, req.user.id]
     );
-    res.status(200).json({ success: true, message: 'Пароль изменен!' });
+    res.status(200).json({ success: true, message: 'Пароль успешно изменен!' });
   } catch (error) {
     console.log("changePassword error:", error.message);
     res.status(500).json({ success: false, message: 'Ошибка сервера' });
