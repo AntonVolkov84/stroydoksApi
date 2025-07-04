@@ -20,8 +20,7 @@ async function createTable() {
         isAdmin BOOLEAN DEFAULT FALSE
       );
     `);
-    console.log('Таблица users создана или уже существует');
-  } catch (err) {
+    } catch (err) {
     console.error('Ошибка создания таблицы:', err);
   }
 }
