@@ -1,0 +1,13 @@
+Invalid unit name "или" escaped as "\xd0\xb8\xd0\xbb\xd0\xb8" (maybe you should use systemd-escape?).
+Unit \xd0\xb8\xd0\xbb\xd0\xb8.service could not be found.
+Unit pg_ctl.service could not be found.
+Unit status.service could not be found.
+[0;1;32m●[0m postgresql.service - PostgreSQL RDBMS
+     Loaded: loaded (/lib/systemd/system/postgresql.service; enabled; vendor preset: enabled)
+     Active: [0;1;32mactive (exited)[0m since Fri 2025-07-04 08:15:30 UTC; 27min ago
+    Process: 38764 ExecStart=/bin/true (code=exited, status=0/SUCCESS)
+   Main PID: 38764 (code=exited, status=0/SUCCESS)
+        CPU: 1ms
+
+Jul 04 08:15:30 jfofovnfrg systemd[1]: Starting PostgreSQL RDBMS...
+Jul 04 08:15:30 jfofovnfrg systemd[1]: Finished PostgreSQL RDBMS.

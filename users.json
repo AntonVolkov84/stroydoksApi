@@ -1,9 +1,17 @@
 [
   {
-    "id": 1751374599735,
-    "username": "antvolkov",
-    "password": "$2b$10$QzLtTmzkSYLqmyO1.7fmX.ffLgpw/Dnp1oAkiYwnKNUMP5nmVgu2a",
-    "email": "antvolkov84@gmail.com",
+    "id": 1751479673134,
+    "username": "Жека",
+    "password": "$2b$10$O4Fw9tl6rGtQBY6PjRzTtO8jCcpbBIBSHru/tJ8GdVFks.DjN3QKu",
+    "email": "aleks_e@inbox.ru",
     "emailConfirmed": true
+  },
+  {
+    "id": 1751620739721,
+    "username": "antvolkov",
+    "password": "$2b$10$EfEXaKxv9Q5hYM8V3jGmzusqhXIOs53vPI3G4L6HEHjQ4KPH3gs8a",
+    "emailConfirmToken": "ce755c8f-66ed-4f70-bd81-82e0e129fdda",
+    "email": "antvolkov84@gmail.com",
+    "emailConfirmed": false
   }
 ]

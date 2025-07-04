@@ -7,9 +7,9 @@ import path from 'path';
 import { Resend } from "resend";
 import crypto from 'crypto'
 import axios from 'axios';
+import pool from '../db'
 const USERS_FILE = path.resolve('users.json');
 const resend = new Resend(process.env.EMAIL_PASS);
-
 const readUsers = async () => {
   try {
     const data = await fs.readFile(USERS_FILE, 'utf8');
@@ -54,6 +54,13 @@ export const register = async (req, res) => {
     ) {
       return res.status(403).json({ message: "Failed reCAPTCHA verification" });
     }
+  const existingUser = await pool.query(
+    'SELECT * FROM users WHERE username = $1 OR email = $2',
+    [username, email]
+  );
+  if (existingUser.rows.length > 0) {
+    return res.status(409).json({ message: 'User already exists' });
+  }
   const users = await readUsers();
   const existing = users.find(u => u.username === username || u.email === email);
   if (existing) {
