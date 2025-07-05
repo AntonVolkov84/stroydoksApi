@@ -12,8 +12,8 @@ const JWT_SECRET = 'access-secret';
 const JWT_REFRESH_SECRET = 'refresh-secret';
 
 const generateTokens = (user) => {
-  const accessToken = jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: '15m' });
-  const refreshToken = jwt.sign({ id: user.id }, JWT_REFRESH_SECRET, { expiresIn: '7d' });
+  const accessToken = jwt.sign({ id: user.id, email: user.email, }, JWT_SECRET, { expiresIn: '15m' });
+  const refreshToken = jwt.sign({ id: user.id, email: user.email, }, JWT_REFRESH_SECRET, { expiresIn: '7d' });
   return { accessToken, refreshToken };
 };
 
@@ -127,7 +127,10 @@ export const logout = (req, res) => {
 };
 export const me = async (req, res) => {
   try {
-    const result = await pool.query('SELECT id, username, email, emailconfirmed FROM users WHERE id = $1', [req.user.id]);
+    const result = await pool.query(
+        'SELECT id, username, email, emailconfirmed, isadmin FROM users WHERE id = $1',
+        [req.user.id]
+    );
     if (result.rows.length === 0) return res.sendStatus(404);
     const user = result.rows[0];
     res.json({
@@ -135,6 +138,7 @@ export const me = async (req, res) => {
       username: user.username,
       email: user.email,
       emailConfirmed: user.emailconfirmed, 
+      isAdmin: user.isadmin,
     });
   } catch (error) {
     console.error('Error fetching user info:', error);

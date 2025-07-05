@@ -5,6 +5,7 @@ import fs from 'fs';
 import dotenv from 'dotenv';
 dotenv.config();
 import * as authController from './controllers/authController.js'
+import * as calculatorController from './controllers/calculatorController.js'
 import { authenticate } from './middleware/authMiddleware.js';
 import cookieParser from 'cookie-parser';
 
@@ -44,7 +45,7 @@ app.post('/stroydocs/me', authenticate,  authController.me);
 app.post('/stroydocs/confirmmail', authController.mailConfirm);
 app.post('/stroydocs/forgotpassword', authController.forgetPassword);
 app.post('/stroydocs/changepassword', authenticate, authController.changePassword);
-app.post('/test', authController.sendForgotPasswordEmail);
+app.post('/calculators/create', authenticate, calculatorController.createCalculator);
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('🧨 Unhandled Rejection:', reason);

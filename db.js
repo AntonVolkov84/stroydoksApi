@@ -20,6 +20,18 @@ async function createTable() {
         isAdmin BOOLEAN DEFAULT FALSE
       );
     `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS calculators (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        formula TEXT NOT NULL,
+        variables JSONB NOT NULL,
+        author_email TEXT NOT NULL,
+        result_unit TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT now(),
+        updated_at TIMESTAMP DEFAULT now()
+      );
+    `);
     } catch (err) {
     console.error('Ошибка создания таблицы:', err);
   }
