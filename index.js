@@ -46,6 +46,9 @@ app.post('/stroydocs/confirmmail', authController.mailConfirm);
 app.post('/stroydocs/forgotpassword', authController.forgetPassword);
 app.post('/stroydocs/changepassword', authenticate, authController.changePassword);
 app.post('/calculators/create', authenticate, calculatorController.createCalculator);
+app.get('/calculators', authenticate, calculatorController.getAllCalculators);
+app.post('/calculators/delete', authenticate, calculatorController.deleteCalculator);
+app.post('/calculators/update', authenticate, calculatorController.updateCalculator);
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('🧨 Unhandled Rejection:', reason);

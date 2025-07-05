@@ -16,3 +16,51 @@ export const createCalculator = async (req, res) => {
     res.status(500).json({ message: "Ошибка сервера" });
   }
 }
+ export const getAllCalculators = async (req, res) => {
+  try {
+    const result = await pool.query(
+       `SELECT * FROM calculators ORDER BY created_at DESC`
+    );
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error("Ошибка при получении калькуляторов:", error);
+    res.status(500).json({ error: "Ошибка сервера при получении калькуляторов" });
+  }
+};
+export const deleteCalculator = async (req, res) => {
+  const { id } = req.body;
+  try {
+    const result = await pool.query(
+      'DELETE FROM calculators WHERE id = $1 RETURNING *',
+      [id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Калькулятор не найден' });
+    }
+    res.status(200).json({ message: 'Калькулятор успешно удалён' });
+  } catch (err) {
+    console.error('Ошибка при удалении калькулятора:', err);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+};
+export const updateCalculator = async (req, res) => {
+  const { id, title, formula, result_unit, variables } = req.body;
+  try {
+    const variablesJson = JSON.stringify(variables);
+    const result = await pool.query(
+      `UPDATE calculators 
+       SET title = $1, formula = $2, result_unit = $3, variables = $4, updated_at = NOW()
+       WHERE id = $5
+       RETURNING *`,
+      [title, formula, result_unit, variablesJson, id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Калькулятор не найден' });
+    }
+    res.status(200).json({ message: 'Калькулятор успешно изменён', calculator: result.rows[0] });
+  } catch (err) {
+    console.error('Ошибка при изменении калькулятора:', err);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+};
