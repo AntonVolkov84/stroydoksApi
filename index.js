@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import * as authController from './controllers/authController.js'
 import * as calculatorController from './controllers/calculatorController.js'
+import * as userController from './controllers/userController.js'
 import { authenticate } from './middleware/authMiddleware.js';
 import cookieParser from 'cookie-parser';
 
@@ -49,6 +50,9 @@ app.post('/calculators/create', authenticate, calculatorController.createCalcula
 app.get('/calculators', authenticate, calculatorController.getAllCalculators);
 app.post('/calculators/delete', authenticate, calculatorController.deleteCalculator);
 app.post('/calculators/update', authenticate, calculatorController.updateCalculator);
+app.get('/users', authenticate, userController.getAllUsers);
+app.post('/users/remove', authenticate, userController.removeUser);
+app.post('/users/toggleadmin', authenticate, userController.toggleUser);
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('🧨 Unhandled Rejection:', reason);
