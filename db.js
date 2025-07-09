@@ -17,7 +17,9 @@ async function createTable() {
         forgotPasswordToken VARCHAR(255),
         forgotPasswordTokenExpires TIMESTAMP,
         emailConfirmToken VARCHAR(255),
-        isAdmin BOOLEAN DEFAULT FALSE
+        isAdmin BOOLEAN DEFAULT FALSE,
+        name VARCHAR(100) NOT NULL,
+        surname VARCHAR(100) NOT NULL
       );
     `);
     await pool.query(`

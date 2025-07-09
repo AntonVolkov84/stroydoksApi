@@ -19,8 +19,8 @@ const generateTokens = (user) => {
 
 export const register = async (req, res) => {
   try {
-    const { username, password, email, recaptchaToken } = req.body;
-    if (!username || !password || !email) {
+    const { username, password, email, recaptchaToken, name, surname } = req.body;
+    if (!username || !password || !email || !name || !surname) {
       return res.status(422).json({ message: 'Not enough data' });
     }
     if (!recaptchaToken) {
@@ -48,11 +48,11 @@ export const register = async (req, res) => {
 
     const insertQuery = `
       INSERT INTO users 
-        (username, password, email, emailConfirmToken, emailConfirmed)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING id, username, email, emailConfirmed;
+        (username, password, email, emailConfirmToken, emailConfirmed, name, surname)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id, username, email, emailConfirmed, name, surname;
     `;
-    const values = [username, hashed, email, emailToken, false];
+    const values = [username, hashed, email, emailToken, false, name, surname];
     const result = await pool.query(insertQuery, values);
 
     const user = result.rows[0];
@@ -77,12 +77,12 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
+  const { email, password } = req.body;
+  if (!email || !password) {
     return res.status(422).json({ message: 'Username and password required' });
   }
   try {
-    const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
     if (result.rows.length === 0) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -128,7 +128,7 @@ export const logout = (req, res) => {
 export const me = async (req, res) => {
   try {
     const result = await pool.query(
-        'SELECT id, username, email, emailconfirmed, isadmin FROM users WHERE id = $1',
+        'SELECT id, username, email, emailconfirmed, isadmin, name, surname FROM users WHERE id = $1',
         [req.user.id]
     );
     if (result.rows.length === 0) return res.sendStatus(404);
@@ -139,6 +139,8 @@ export const me = async (req, res) => {
       email: user.email,
       emailConfirmed: user.emailconfirmed, 
       isAdmin: user.isadmin,
+      name: user.name,
+      surname: user.surname
     });
   } catch (error) {
     console.error('Error fetching user info:', error);
