@@ -57,6 +57,8 @@ app.post('/users/remove', authenticate, userController.removeUser);
 app.post('/users/toggleadmin', authenticate, userController.toggleUser);
 app.post('/news/create', authenticate, newsController.createNews);
 app.delete("/delete-image", deleteImageFromCloudinary);
+app.delete("/news/delete", newsController.deleteNew);
+app.get("/news/getallnews", newsController.getAllNews);
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('🧨 Unhandled Rejection:', reason);

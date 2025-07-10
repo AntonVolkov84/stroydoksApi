@@ -27,10 +27,23 @@ export const createNews = async (req, res) => {
     const result = await pool.query(
        `SELECT * FROM news ORDER BY created_at DESC`
     );
-
     res.status(200).json(result.rows);
   } catch (error) {
     console.error("Ошибка при получении новостей:", error);
     res.status(500).json({ error: "Ошибка сервера при получении новостей" });
   }
 };
+export const deleteNew = async(req, res) => {
+  const id = req.query.id;
+  console.log(id)
+  if (!id) {
+    return res.status(400).json({ error: "ID новости не передан" });
+  }
+  try{
+    const result = await pool.query("DELETE FROM news WHERE id = $1", [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Новость не найдена" });
+    }
+    res.status(200).json({ message: "Новость успешно удалена" });
+  }catch(error){console.log("Ошибка при удалении новости:", error)}
+}
