@@ -34,6 +34,18 @@ async function createTable() {
         updated_at TIMESTAMP DEFAULT now()
       );
     `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS news (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(200) NOT NULL,
+      text TEXT NOT NULL,
+      imageUrl TEXT,
+      imagePublicId VARCHAR(255),
+      author_email VARCHAR(255) NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+    `);
     } catch (err) {
     console.error('Ошибка создания таблицы:', err);
   }

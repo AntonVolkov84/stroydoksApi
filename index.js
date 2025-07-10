@@ -7,8 +7,10 @@ dotenv.config();
 import * as authController from './controllers/authController.js'
 import * as calculatorController from './controllers/calculatorController.js'
 import * as userController from './controllers/userController.js'
+import * as newsController from './controllers/newsController.js'
 import { authenticate } from './middleware/authMiddleware.js';
 import cookieParser from 'cookie-parser';
+import {deleteImageFromCloudinary} from './controllers/cloudinaryController.js'
 
 const sslcertificate = '/etc/letsencrypt/live/api.stroydoks.ru/fullchain.pem';
 const certificatekey = '/etc/letsencrypt/live/api.stroydoks.ru/privkey.pem';
@@ -53,6 +55,8 @@ app.post('/calculators/update', authenticate, calculatorController.updateCalcula
 app.get('/users', authenticate, userController.getAllUsers);
 app.post('/users/remove', authenticate, userController.removeUser);
 app.post('/users/toggleadmin', authenticate, userController.toggleUser);
+app.post('/news/create', authenticate, newsController.createNews);
+app.delete("/delete-image", deleteImageFromCloudinary);
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('🧨 Unhandled Rejection:', reason);
