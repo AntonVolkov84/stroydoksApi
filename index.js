@@ -59,6 +59,7 @@ app.post('/news/create', authenticate, newsController.createNews);
 app.delete("/delete-image", deleteImageFromCloudinary);
 app.delete("/news/delete", newsController.deleteNew);
 app.get("/news/getallnews", newsController.getAllNews);
+app.put("/news/changenew/:id", newsController.changeNew);
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('🧨 Unhandled Rejection:', reason);
