@@ -122,7 +122,11 @@ export const refresh = async (req, res) => {
   }
 };
 export const logout = (req, res) => {
-  res.clearCookie('refreshToken');
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    sameSite: 'none',
+    secure: true,
+      });
   res.json({ message: 'Logged out' });
 };
 export const me = async (req, res) => {

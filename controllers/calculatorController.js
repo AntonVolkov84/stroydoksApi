@@ -64,3 +64,36 @@ export const updateCalculator = async (req, res) => {
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 };
+export const saveCalculation = async (req, res) => {
+  const { userId, title, calculator, variablesValues, result } = req.body;
+   if (!userId || !title || !calculator || !variablesValues || !result) {
+    return res.status(400).json({ message: "Неверные данные" });
+  }
+  try {
+    await pool.query(
+      `INSERT INTO saved_calculations (userId, title, calculator, input_values, result)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [userId, title, calculator, variablesValues, result]
+    );
+    res.json({ message: "Сохранено успешно" });
+  } catch (err) {
+    console.error("Ошибка записи:", err);
+    res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
+export const getSavedCalculations = async (req, res) => {
+  const { userId } = req.query;
+  if (!userId) {
+    return res.status(400).json({ message: 'userId обязателен' });
+  }
+  try {
+    const { rows } = await pool.query(
+      `SELECT * FROM saved_calculations WHERE userId = $1 ORDER BY created_at DESC`,
+      [userId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('Ошибка получения сохранённых калькуляторов:', err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+};

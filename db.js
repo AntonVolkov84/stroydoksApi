@@ -46,6 +46,17 @@ async function createTable() {
       updated_at TIMESTAMP DEFAULT NOW()
     );
     `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS saved_calculations (
+      id SERIAL PRIMARY KEY,
+      userId INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      calculator JSONB NOT NULL,  
+      input_values JSONB NOT NULL, 
+      result TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
     } catch (err) {
     console.error('Ошибка создания таблицы:', err);
   }
