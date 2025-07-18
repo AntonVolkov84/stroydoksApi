@@ -97,3 +97,19 @@ export const getSavedCalculations = async (req, res) => {
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 };
+export const removeSavedCalculation = async (req, res) => {
+  const { savedCalcId } = req.query;
+  if (!savedCalcId) {
+    return res.status(400).json({ message: 'userId обязателен' });
+  }
+  try {
+     await pool.query(
+      `DELETE FROM saved_calculations WHERE id = $1`,
+      [savedCalcId]
+    );
+    res.json({ message: 'Калькулятор успешно удалён' });
+  } catch (err) {
+    console.error('Ошибка удаления сохраненного  калькулятора:', err);
+    res.status(500).json({ message: 'Ошибка сервера' });
+  }
+};

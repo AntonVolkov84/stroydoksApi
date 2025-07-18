@@ -8,6 +8,7 @@ import * as authController from './controllers/authController.js'
 import * as calculatorController from './controllers/calculatorController.js'
 import * as userController from './controllers/userController.js'
 import * as newsController from './controllers/newsController.js'
+import * as commercialOfferController from './controllers/commercialOfferController.js'
 import { authenticate } from './middleware/authMiddleware.js';
 import cookieParser from 'cookie-parser';
 import {deleteImageFromCloudinary} from './controllers/cloudinaryController.js'
@@ -54,6 +55,10 @@ app.post('/calculators/delete', authenticate, calculatorController.deleteCalcula
 app.post('/calculators/update', authenticate, calculatorController.updateCalculator);
 app.post('/stroydocs/savecalc', authenticate, calculatorController.saveCalculation);
 app.get('/stroydocs/getsavecalc', calculatorController.getSavedCalculations);
+app.delete("/stroydocs/delsavedcalc", authenticate, calculatorController.removeSavedCalculation );
+app.post('/stroydocs/savecomerc', authenticate, commercialOfferController.saveCommercialOffer);
+app.get('/stroydocs/getsavecomerc', commercialOfferController.getSavedCommercialOffers);
+app.delete("/stroydocs/delsavedcomerc", authenticate, commercialOfferController.removeSavedCommercialOffer );
 app.get('/users', authenticate, userController.getAllUsers);
 app.post('/users/remove', authenticate, userController.removeUser);
 app.post('/users/toggleadmin', authenticate, userController.toggleUser);
