@@ -491,222 +491,42 @@ export const updateSendWork = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
-
-
-
-
-
-
-export const toggleAcceptWork = async (req, res) => {
+export const getFinishedSendWorks = async (req, res) => {
   try {
-    const workId = parseInt(req.params.workId, 10);
-    if (!Number.isInteger(workId)) return res.status(400).json({ error: 'Invalid workId' });
-
-    const workRes = await pool.query('SELECT * FROM pending_works WHERE id = $1', [workId]);
-    if (workRes.rowCount === 0) return res.status(404).json({ error: 'Work not found' });
-
-    const work = workRes.rows[0];
-
-    if (req.user.role !== 'foreman') return res.status(403).json({ error: 'Forbidden' });
-    const { accepted } = req.body;
-    if (typeof accepted !== 'boolean') return res.status(400).json({ error: 'Invalid accepted value' });
-
-    const updateRes = await pool.query(
-      'UPDATE pending_works SET accepted = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
-      [accepted, workId]
-    );
-
-    const updatedWork = updateRes.rows[0];
-
-    const participants = await pool.query(
-    'SELECT DISTINCT worker_id FROM object_workers WHERE object_id = $1',
-    [work.object_id]
-    );
-    const workerIds = participants.rows.map((r) => r.worker_id);
-    const foremanRes = await pool.query(
-    'SELECT author_id FROM objects WHERE id = $1',
-    [work.object_id]
-    );
-    if (foremanRes.rowCount > 0) {
-      const foremanId = foremanRes.rows[0].author_id;
-      if (!workerIds.includes(foremanId)) {
-        workerIds.push(foremanId);
-      }
-    }
-    console.log("broadcastToUsers", workerIds)
-    broadcastToUsers(workerIds, { type: 'work-update', object: updatedWork });
-
-    return res.json(updatedWork);
-
-  } catch (err) {
-    console.error('toggleAcceptWork error', err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-};
-export const exportPendingWorks = async (req, res) => {
-  try {
-    const objectId = parseInt(req.params.objectId, 10);
-    if (!Number.isInteger(objectId)) return res.status(400).json({ error: 'Invalid objectId' });
-
-    if (req.user.role !== 'foreman') return res.status(403).json({ error: 'Forbidden' });
-
-    const worksRes = await pool.query(
-      'SELECT * FROM pending_works WHERE object_id = $1 AND accepted = TRUE',
-      [objectId]
-    );
-
-    const works = worksRes.rows;
-    if (works.length === 0) return res.status(400).json({ error: 'No accepted works to export' });
-
-    const insertPromises = works.map(w =>
-      pool.query(
-        `INSERT INTO finished_works (object_id, worker_id, title, unit, quantity, accepted, confirmed_at)
-         VALUES ($1,$2,$3,$4,$5,TRUE,NOW())
-         RETURNING *`,
-        [w.object_id, w.worker_id, w.title, w.unit, w.quantity]
-      )
-    );
-
-    const insertedWorksRes = await Promise.all(insertPromises);
-    const finishedWorks = insertedWorksRes.map(r => r.rows[0]);
-
-    const idsToDelete = works.map(w => w.id);
-    await pool.query(`DELETE FROM pending_works WHERE id = ANY($1::int[])`, [idsToDelete]);
-
-    const assigned = await pool.query(
-      `
-      SELECT worker_id AS user_id FROM object_workers WHERE object_id = $1
-      UNION
-      SELECT author_id AS user_id FROM objects WHERE id = $1
-      `,
-      [objectId]
-    );
-    const userIds = assigned.rows.map((r) => r.user_id);
-    broadcastToUsers(userIds, { type: 'work', objectId });
-
-    return res.json({ finishedWorks });
-
-  } catch (err) {
-    console.error('exportPendingWorks error', err);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-};
-export const getFinishedWorks = async (req, res) => {
-  try {
-    const objectId = parseInt(req.params.objectId, 10);
-    if (!Number.isInteger(objectId)) return res.status(400).json({ error: 'Invalid objectId' });
-
-    const objRes = await pool.query('SELECT 1 FROM objects WHERE id = $1', [objectId]);
-    if (objRes.rowCount === 0) return res.status(404).json({ error: 'Object not found' });
-
-    const workerIdQ = req.query.workerId ? parseInt(req.query.workerId, 10) : null;
-
-    const where = ['f.object_id = $1'];
-    const params = [objectId];
-    let idx = 2;
-
-    if (workerIdQ && Number.isInteger(workerIdQ)) {
-      where.push(`f.worker_id = $${idx++}`);
-      params.push(workerIdQ);
-    }
-
-    const sql = `
-      SELECT f.*,
-             u.name AS worker_name,
-             u.surname AS worker_surname,
-             u.username AS worker_username
-      FROM finished_works f
-      LEFT JOIN users u ON u.id = f.worker_id
-      WHERE ${where.join(' AND ')}
-      ORDER BY f.confirmed_at ASC
+    const recipientId = req.user.id; 
+    const { object_id, status } = req.query;
+    let query = `
+      SELECT sw.*, u.*
+      FROM send_works sw
+      JOIN users u ON sw.worker_id = u.id
+      WHERE sw.recipient_id = $1
     `;
-
-    const result = await pool.query(sql, params);
-    return res.json(result.rows);
-
+    const params = [recipientId];
+    if (object_id) {
+      query += " AND sw.object_id = $2";
+      params.push(object_id);
+    }
+    if (status) {
+      query += object_id ? " AND sw.status = $3" : " AND sw.status = $2";
+      params.push(status);
+    }
+    query += " ORDER BY sw.created_at DESC";
+    const { rows } = await pool.query(query, params);
+    res.json(rows);
   } catch (err) {
-    console.error('getFinishedWorks error', err);
-    return res.status(500).json({ error: 'Internal server error' });
+    console.error("getFinishedSendWorks error:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
-export const checkPendingExists = async (req, res) => {
-  try {
-    const objectId = parseInt(req.params.objectId, 10);
-    if (!Number.isInteger(objectId)) return res.status(400).json({ error: "Invalid objectId" });
 
-    const result = await pool.query(
-      "SELECT 1 FROM pending_works WHERE object_id = $1 AND accepted = FALSE LIMIT 1",
-      [objectId]
-    );
 
-    return res.json({ hasPending: result.rowCount > 0 });
-  } catch (err) {
-    console.error("checkPendingExists error", err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-};
-export const deleteFinishedWorks = async (req, res) => {
-  try {
-    const objectId = parseInt(req.params.id, 10);
-    if (!Number.isInteger(objectId)) {
-      return res.status(400).json({ error: "Invalid objectId" });
-    }
-    const objRes = await pool.query("SELECT 1 FROM objects WHERE id = $1", [objectId]);
-    if (objRes.rowCount === 0) {
-      return res.status(404).json({ error: "Object not found" });
-    }
-    const result = await pool.query("DELETE FROM finished_works WHERE object_id = $1", [objectId]);
 
-    return res.json({
-      success: true,
-      deleted: result.rowCount,
-      message: `Удалено ${result.rowCount} записей из finished_works для объекта ${objectId}`,
-    });
-  } catch (err) {
-    console.error("deleteFinishedWorks error", err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-};
-export const exportAndCheckWorks = async (req, res) => {
-  try {
-    const objectId = parseInt(req.params.id, 10);
-    if (!Number.isInteger(objectId)) return res.status(400).json({ error: "Invalid objectId" });
-    if (req.user.role !== "foreman") return res.status(403).json({ error: "Forbidden" });
-    const pendingRes = await pool.query(
-      "SELECT 1 FROM pending_works WHERE object_id = $1 AND accepted = FALSE LIMIT 1",
-      [objectId]
-    );
-    if (pendingRes.rowCount > 0) {
-      return res.status(400).json({ error: "Есть работы, которые не подтверждены" });
-    }
-    const worksRes = await pool.query(
-      "SELECT * FROM pending_works WHERE object_id = $1 AND accepted = TRUE",
-      [objectId]
-    );
-    const works = worksRes.rows;
-    if (works.length === 0) {
-      return res.json({ finishedWorks: [], message: "Нет принятых работ для переноса" });
-    }
-    const insertPromises = works.map(w =>
-      pool.query(
-        `INSERT INTO finished_works (object_id, worker_id, title, unit, quantity, accepted, confirmed_at)
-         VALUES ($1,$2,$3,$4,$5,TRUE,NOW())
-         RETURNING *`,
-        [w.object_id, w.worker_id, w.title, w.unit, w.quantity]
-      )
-    );
-    const insertedWorksRes = await Promise.all(insertPromises);
-    const finishedWorks = insertedWorksRes.map(r => r.rows[0]);
-    const idsToDelete = works.map(w => w.id);
-    await pool.query(`DELETE FROM pending_works WHERE id = ANY($1::int[])`, [idsToDelete]);
-    const workerIds = [...new Set(works.map(w => w.worker_id))];
-    broadcastToUsers(workerIds, { type: "work", objectId });
 
-    return res.json({ finishedWorks, message: "Работы перенесены успешно" });
 
-  } catch (err) {
-    console.error("exportAndCheckWorks error", err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-};
+
+
+
+
+
+
+

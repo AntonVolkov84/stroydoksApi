@@ -93,10 +93,10 @@ app.post("/mobile/register", mobileController.register)
 app.post("/mobile/login", mobileController.login)
 app.post("/mobile/refresh-token", mobileController.refreshAccessToken)
 app.get("/mobile/me", mobileController.meMobile)
+
 app.get("/mobile/objects", authenticateToken, mobileController.getObjects)
 app.post("/mobile/objects", authenticateToken, mobileController.createObject)
 app.delete("/mobile/objects/:id", authenticateToken, mobileController.deleteObject)
-
 app.get("/mobile/pendingworks", authenticateToken, mobileController.getPendingWorks)
 app.post("/mobile/pendingworks", authenticateToken, mobileController.addPendingWork)
 app.put("/mobile/pendingworks/:workId", authenticateToken, mobileController.updatePendingWork)
@@ -109,21 +109,8 @@ app.get("/mobile/sendworks/received", authenticateToken, mobileController.getRec
 app.get("/mobile/sendworks", authenticateToken, mobileController.getSendWorks);
 app.put("/mobile/sendworks/:id/status", authenticateToken, mobileController.updateStatus);
 app.put("/mobile/sendworks/:id", authenticateToken, mobileController.updateSendWork);
-
-
-app.put("/mobile/objects/works/:workId/accept", authenticateToken, mobileController.toggleAcceptWork)
-
-app.post("/mobile/objects/:objectId/export", authenticateToken, mobileController.exportPendingWorks)
-app.get("/mobile/objects/:objectId/finished-works", authenticateToken, mobileController.getFinishedWorks)
-app.get("/mobile/objects/:objectId/pending-check", authenticateToken, mobileController.checkPendingExists)
+app.get("/mobile/sendworks/finishedworks", authenticateToken, mobileController.getFinishedSendWorks);
 app.post('/mobile/savebillbook', authenticateToken, billOfQuantities.saveBillOfQuantities);
-app.post('/mobile/objects/:id/export-check', authenticateToken, mobileController.exportAndCheckWorks);
-app.delete("/mobile/objects/finished-works/:id", authenticateToken, mobileController.deleteFinishedWorks)
-
-
-
-
-
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('🧨 Unhandled Rejection:', reason);
