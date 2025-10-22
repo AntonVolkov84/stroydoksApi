@@ -1,14 +1,14 @@
 import pool from '../db.js'
 
 export const createCalculator = async (req, res) => {
-  const { title, formula, variables, resultUnit } = req.body;
+  const { title, formula, variables, resultUnit, imageUri, imagePublicId, } = req.body;
   const userEmail = req.user.email
   try {
     const result = await pool.query(
-      `INSERT INTO calculators (title, formula, variables, author_email, result_unit, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, now(), now())
+      `INSERT INTO calculators (title, formula, variables, author_email, result_unit, created_at, updated_at, image_url, image_public_id)
+       VALUES ($1, $2, $3, $4, $5, now(), now(), $6, $7)
        RETURNING *`,
-      [title, formula, JSON.stringify(variables), userEmail, resultUnit]
+      [title, formula, JSON.stringify(variables), userEmail, resultUnit,imageUri, imagePublicId]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -45,15 +45,15 @@ export const deleteCalculator = async (req, res) => {
   }
 };
 export const updateCalculator = async (req, res) => {
-  const { id, title, formula, result_unit, variables } = req.body;
+  const { id, title, formula, result_unit, variables, imageUri, imagePublicId, } = req.body;
   try {
     const variablesJson = JSON.stringify(variables);
     const result = await pool.query(
       `UPDATE calculators 
-       SET title = $1, formula = $2, result_unit = $3, variables = $4, updated_at = NOW()
+       SET title = $1, formula = $2, result_unit = $3, variables = $4, updated_at = NOW(), image_url = $6, image_public_id = $7
        WHERE id = $5
        RETURNING *`,
-      [title, formula, result_unit, variablesJson, id]
+      [title, formula, result_unit, variablesJson, id, imageUri, imagePublicId,]
     );
     if (result.rowCount === 0) {
       return res.status(404).json({ error: 'Калькулятор не найден' });
@@ -65,15 +65,15 @@ export const updateCalculator = async (req, res) => {
   }
 };
 export const saveCalculation = async (req, res) => {
-  const { userId, title, calculator, variablesValues, result } = req.body;
+  const { userId, title, calculator, variablesValues, result, imageUri, imagePublicId, } = req.body;
    if (!userId || !title || !calculator || !variablesValues || !result) {
     return res.status(400).json({ message: "Неверные данные" });
   }
   try {
     await pool.query(
-      `INSERT INTO saved_calculations (userId, title, calculator, input_values, result)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [userId, title, calculator, variablesValues, result]
+      `INSERT INTO saved_calculations (userId, title, calculator, input_values, result, image_url, image_public_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [userId, title, calculator, variablesValues, result, imageUri, imagePublicId,]
     );
     res.json({ message: "Сохранено успешно" });
   } catch (err) {

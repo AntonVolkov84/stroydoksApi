@@ -9,7 +9,11 @@ import * as calculatorController from './controllers/calculatorController.js'
 import * as userController from './controllers/userController.js'
 import * as newsController from './controllers/newsController.js'
 import * as commercialOfferController from './controllers/commercialOfferController.js'
+import * as referenceBookController from './controllers/referenceBookController.js'
+import * as billOfQuantities from './controllers/BillOfQuantitiesController.js'
+import * as mobileController from './controllers/mobileController.js'
 import { authenticate } from './middleware/authMiddleware.js';
+import {authenticateToken} from './middleware/authenticateToken.js'
 import cookieParser from 'cookie-parser';
 import {deleteImageFromCloudinary} from './controllers/cloudinaryController.js'
 
@@ -19,7 +23,7 @@ const httpsPort = 3667
 const app = express();
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'https://api.stroydoks.ru', 'https://app.stroydoks.ru'],
+  origin: ['http://localhost:3000', 'https://api.stroydoks.ru', 'https://app.stroydoks.ru', 'https://stroydoks.ru'],
   credentials: true,
 }));
 app.use(express.json());
@@ -38,6 +42,7 @@ try{
   }
   const httpsServer = https.createServer(credentials, app)
   httpsServer.listen(httpsPort, () => {console.log("Https сервер запущен")})
+  
 }catch(error){console.log("index.js", error.message)}
 
 
@@ -48,7 +53,7 @@ app.post('/stroydocs/logout', authenticate,  authController.logout);
 app.post('/stroydocs/me', authenticate,  authController.me);
 app.post('/stroydocs/confirmmail', authController.mailConfirm);
 app.post('/stroydocs/forgotpassword', authController.forgetPassword);
-app.post('/stroydocs/changepassword', authenticate, authController.changePassword);
+app.post('/stroydocs/changepassword', authController.changePassword);
 app.post('/calculators/create', authenticate, calculatorController.createCalculator);
 app.get('/calculators', calculatorController.getAllCalculators);
 app.post('/calculators/delete', authenticate, calculatorController.deleteCalculator);
@@ -59,14 +64,66 @@ app.delete("/stroydocs/delsavedcalc", authenticate, calculatorController.removeS
 app.post('/stroydocs/savecomerc', authenticate, commercialOfferController.saveCommercialOffer);
 app.get('/stroydocs/getsavecomerc', commercialOfferController.getSavedCommercialOffers);
 app.delete("/stroydocs/delsavedcomerc", authenticate, commercialOfferController.removeSavedCommercialOffer );
+app.put("/stroydocs/updatesavedcomerc", authenticate, commercialOfferController.updateCommercialOffer );
+app.post('/stroydocs/savecomercsecondform', authenticate, commercialOfferController.saveCommercialOfferSecondForm);
+app.post('/stroydocs/pendingcommercial', authenticate, commercialOfferController.savePendingCommercialOffer);
+app.get('/stroydocs/getsavecomercsecondform', commercialOfferController.getSavedCommercialOfferSecondForm);
+app.post('/referencebook/createre', authenticate, referenceBookController.addToReferenceData);
+app.post('/referencebook/updateref', authenticate, referenceBookController.updateReferenceData);
+app.delete('/referencebook/removeref', authenticate, referenceBookController.deleteReferenceData);
+app.get('/referencebook/getalldata', referenceBookController.getAllReferenceData);
+app.delete("/stroydocs/delsavedcomercsecondform", authenticate, commercialOfferController.removeSavedCommercialOfferSecondForm );
+app.put("/stroydocs/updatesavedcomercsecondform", authenticate, commercialOfferController.updateCommercialOfferSecondForm);
 app.get('/users', authenticate, userController.getAllUsers);
 app.post('/users/remove', authenticate, userController.removeUser);
 app.post('/users/toggleadmin', authenticate, userController.toggleUser);
+app.post('/users/getuserid', authenticate, userController.getUserIdByEmail);
+app.post('/users/toggleunlim', authenticate, userController.toggleUserUnlim);
 app.post('/news/create', authenticate, newsController.createNews);
 app.delete("/delete-image", deleteImageFromCloudinary);
-app.delete("/news/delete", newsController.deleteNew);
+app.delete("/news/delete", authenticate, newsController.deleteNew);
 app.get("/news/getallnews", newsController.getAllNews);
-app.put("/news/changenew/:id", newsController.changeNew);
+app.put("/news/changenew/:id", authenticate, newsController.changeNew);
+app.post('/stroydocs/savebillbook', authenticate, billOfQuantities.saveBillOfQuantities);
+app.put('/stroydocs/updatesavedbillbook', authenticate, billOfQuantities.updateBillOfQuantities);
+app.get('/stroydocs/getsavedbillbook', authenticate, billOfQuantities.getSavedBillOfQuantities);
+app.delete("/stroydocs/delsavedbillbook", authenticate, billOfQuantities.removeSavedBillOfQuantities);
+
+app.post("/mobile/register", mobileController.register)
+app.post("/mobile/login", mobileController.login)
+app.post("/mobile/refresh-token", mobileController.refreshAccessToken)
+app.get("/mobile/me", mobileController.meMobile)
+app.get("/mobile/objects", authenticateToken, mobileController.getObjects)
+app.post("/mobile/objects", authenticateToken, mobileController.createObject)
+app.delete("/mobile/objects/:id", authenticateToken, mobileController.deleteObject)
+
+app.get("/mobile/pendingworks", authenticateToken, mobileController.getPendingWorks)
+app.post("/mobile/pendingworks", authenticateToken, mobileController.addPendingWork)
+app.put("/mobile/pendingworks/:workId", authenticateToken, mobileController.updatePendingWork)
+app.delete("/mobile/pendingworks/:workId", authenticateToken, mobileController.deletePendingWork)
+app.post("/mobile/sendworks", authenticateToken, mobileController.sendWorks);
+app.put("/mobile/sendworks/assign-object", authenticateToken, mobileController.assignObjectToWork);
+app.get("/mobile/recipients", authenticateToken, mobileController.getRecipients)
+app.post("/mobile/recipients", authenticateToken, mobileController.addRecipient)
+app.get("/mobile/sendworks/received", authenticateToken, mobileController.getReceivedWorks);
+app.get("/mobile/sendworks", authenticateToken, mobileController.getSendWorks);
+app.put("/mobile/sendworks/:id/status", authenticateToken, mobileController.updateStatus);
+app.put("/mobile/sendworks/:id", authenticateToken, mobileController.updateSendWork);
+
+
+app.put("/mobile/objects/works/:workId/accept", authenticateToken, mobileController.toggleAcceptWork)
+
+app.post("/mobile/objects/:objectId/export", authenticateToken, mobileController.exportPendingWorks)
+app.get("/mobile/objects/:objectId/finished-works", authenticateToken, mobileController.getFinishedWorks)
+app.get("/mobile/objects/:objectId/pending-check", authenticateToken, mobileController.checkPendingExists)
+app.post('/mobile/savebillbook', authenticateToken, billOfQuantities.saveBillOfQuantities);
+app.post('/mobile/objects/:id/export-check', authenticateToken, mobileController.exportAndCheckWorks);
+app.delete("/mobile/objects/finished-works/:id", authenticateToken, mobileController.deleteFinishedWorks)
+
+
+
+
+
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('🧨 Unhandled Rejection:', reason);

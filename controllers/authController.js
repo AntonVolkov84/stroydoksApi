@@ -18,6 +18,7 @@ const generateTokens = (user) => {
 };
 
 export const register = async (req, res) => {
+  
   try {
     const { username, password, email, recaptchaToken, name, surname } = req.body;
     if (!username || !password || !email || !name || !surname) {
@@ -42,10 +43,8 @@ export const register = async (req, res) => {
     if (existingUser.rows.length > 0) {
       return res.status(409).json({ message: 'User already exists' });
     }
-
     const hashed = await bcrypt.hash(password, 10);
     const emailToken = crypto.randomUUID();
-
     const insertQuery = `
       INSERT INTO users 
         (username, password, email, emailConfirmToken, emailConfirmed, name, surname)
@@ -54,22 +53,48 @@ export const register = async (req, res) => {
     `;
     const values = [username, hashed, email, emailToken, false, name, surname];
     const result = await pool.query(insertQuery, values);
-
     const user = result.rows[0];
-
     const { accessToken, refreshToken } = generateTokens(user);
-
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       sameSite: 'none',
       secure: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-
+    const pendingOffers = await pool.query(
+      `SELECT * FROM saved_pendingcommercialoffer WHERE email = $1`,
+      [email]
+    );
+    if (pendingOffers.rows.length > 0) {
+    for (const offer of pendingOffers.rows) {
+      if (offer.type === "form0") {
+         await pool.query(
+        `INSERT INTO saved_commercialoffer (userId, title, rows, taxRate)
+         VALUES ($1, $2, $3, $4)`,
+        [user.id, offer.title, JSON.stringify(offer.rows), offer.taxrate]
+         );
+        } 
+      else if (offer.type === "form1") {
+         await pool.query(
+        `INSERT INTO saved_commercialofferformone (userId, title, rows, taxRate)
+         VALUES ($1, $2, $3, $4)`,
+        [user.id, offer.title, JSON.stringify(offer.rows), offer.taxrate]
+        );
+      }else if(offer.type === "billofquantities"){
+        await pool.query(
+        `INSERT INTO saved_billofquantities (userId, title, rows)
+         VALUES ($1, $2, $3)`,
+        [user.id, offer.title, JSON.stringify(offer.rows)]
+        );
+      }
+    }
+     await pool.query(
+        `DELETE FROM saved_pendingcommercialoffer WHERE email = $1`,
+        [email]
+      );
+    }
     await sendConfirmationEmail(email, emailToken);
-
     res.status(201).json({ accessToken });
-
   } catch (error) {
     console.log("register error:", error.message);
     res.status(500).json({ message: 'Internal server error' });
@@ -132,20 +157,12 @@ export const logout = (req, res) => {
 export const me = async (req, res) => {
   try {
     const result = await pool.query(
-        'SELECT id, username, email, emailconfirmed, isadmin, name, surname FROM users WHERE id = $1',
+        'SELECT * FROM users WHERE id = $1',
         [req.user.id]
     );
     if (result.rows.length === 0) return res.sendStatus(404);
     const user = result.rows[0];
-    res.json({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      emailConfirmed: user.emailconfirmed, 
-      isAdmin: user.isadmin,
-      name: user.name,
-      surname: user.surname
-    });
+    res.json(user);
   } catch (error) {
     console.error('Error fetching user info:', error);
     res.sendStatus(500);
@@ -308,3 +325,20 @@ export async function sendForgotPasswordEmail(to, token) {
     throw error;
   }
 }
+export async function sendEmailUnregisteredUser(to, sender) {
+const resetLink = `https://app.stroydoks.ru`;
+try {
+  const data = await resend.emails.send({
+    from: "Stroydoks <support@stroydoks.ru>",
+    to,
+    subject: `Пользователь ${sender} отправил Вам документ`,
+    html: `<p>Здравствуйте!</p>
+           <p>Для просмотра отправленного Вам документа перейдите по ссылке и зарегистрируйтесь:</p>
+           <a href="${resetLink}">${resetLink}</a>
+           <p>После регистрации сохраненный документ будет доступен в личном кабинете во влкадке Сохраненные документы </p>`,
+  });
+  console.log("Письмо-уведомление незарегистрированному получателю отправлено", data);
+} catch (error) {
+  console.error("❌ Ошибка отправки email незарегистрированному пользователю:", error);
+  throw error;
+}}

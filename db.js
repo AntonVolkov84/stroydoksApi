@@ -29,6 +29,8 @@ async function createTable() {
         formula TEXT NOT NULL,
         variables JSONB NOT NULL,
         author_email TEXT NOT NULL,
+        image_url TEXT,
+        image_public_id TEXT,
         result_unit TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT now(),
         updated_at TIMESTAMP DEFAULT now()
@@ -53,6 +55,8 @@ async function createTable() {
       title TEXT NOT NULL,
       calculator JSONB NOT NULL,  
       input_values JSONB NOT NULL, 
+      image_url TEXT,
+      image_public_id TEXT,
       result TEXT NOT NULL,
       created_at TIMESTAMP DEFAULT NOW()
       );
@@ -66,6 +70,98 @@ async function createTable() {
       taxRate INTEGER NOT NULL,
       created_at TIMESTAMP DEFAULT NOW()
       );
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS saved_commercialofferformone (
+      id SERIAL PRIMARY KEY,
+      userId INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      rows JSONB NOT NULL,  
+      taxRate INTEGER NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS saved_pendingcommercialoffer (
+      id SERIAL PRIMARY KEY,
+      email TEXT NOT NULL,
+      title TEXT NOT NULL,
+      rows JSONB NOT NULL,  
+      taxRate INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS reference_data (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      text TEXT NOT NULL,
+      text_images JSONB NOT NULL DEFAULT '[]',
+      table_images JSONB NOT NULL DEFAULT '[]',
+      updated_at TIMESTAMP DEFAULT NOW()
+     );
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS saved_billofquantities (
+      id SERIAL PRIMARY KEY,
+      userid INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      rows JSONB NOT NULL,
+      updated_at TIMESTAMP DEFAULT NOW()
+     );
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS objects (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      address TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      author_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+    );
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS pending_works (
+      id            SERIAL PRIMARY KEY,
+      worker_id     INT NOT NULL REFERENCES users(id),
+      title         TEXT NOT NULL,
+      unit          VARCHAR(50) NOT NULL,
+      quantity      DECIMAL(10,2) NOT NULL,
+      created_at    TIMESTAMP DEFAULT NOW(),
+      updated_at    TIMESTAMP DEFAULT NOW()
+    );
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS send_works (
+      id              SERIAL PRIMARY KEY,
+      worker_id       INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      recipient_id    INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title           TEXT NOT NULL,
+      unit            VARCHAR(50) NOT NULL,
+      quantity        DECIMAL(10,2) NOT NULL,
+      created_at      TIMESTAMP DEFAULT NOW(),
+      updated_at      TIMESTAMP DEFAULT NOW()
+    );
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS recipients (
+      id SERIAL PRIMARY KEY,
+      worker_id INT NOT NULL REFERENCES users(id),
+      recipient_id INT NOT NULL REFERENCES users(id),
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS finished_works (
+      id            SERIAL PRIMARY KEY,
+      object_id    INT NOT NULL REFERENCES objects(id),
+      worker_id    INT NOT NULL REFERENCES users(id),
+      title         TEXT NOT NULL,
+      unit          VARCHAR(50) NOT NULL,
+      quantity      DECIMAL(10,2) NOT NULL,
+      accepted      BOOLEAN DEFAULT TRUE,
+      confirmed_at  TIMESTAMP DEFAULT NOW()
+    );
     `);
     } catch (err) {
     console.error('Ошибка создания таблицы:', err);
