@@ -151,18 +151,6 @@ async function createTable() {
       created_at TIMESTAMP DEFAULT NOW()
     );
     `);
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS finished_works (
-      id            SERIAL PRIMARY KEY,
-      object_id    INT NOT NULL REFERENCES objects(id),
-      worker_id    INT NOT NULL REFERENCES users(id),
-      title         TEXT NOT NULL,
-      unit          VARCHAR(50) NOT NULL,
-      quantity      DECIMAL(10,2) NOT NULL,
-      accepted      BOOLEAN DEFAULT TRUE,
-      confirmed_at  TIMESTAMP DEFAULT NOW()
-    );
-    `);
     } catch (err) {
     console.error('Ошибка создания таблицы:', err);
   }
