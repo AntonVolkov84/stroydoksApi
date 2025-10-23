@@ -187,6 +187,7 @@ export const deleteObject = async (req, res) => {
     if (!object.rows.length) {
       return res.status(404).json({ message: "Объект не найден или доступ запрещён" });
     }
+    await pool.query("DELETE FROM send_works WHERE object_id = $1", [objectId]);
     await pool.query("DELETE FROM objects WHERE id = $1", [objectId]);
     res.status(200).json({ message: "Объект успешно удалён" });
   } catch (err) {
