@@ -111,6 +111,10 @@ app.put("/mobile/sendworks/:id/status", authenticateToken, mobileController.upda
 app.put("/mobile/sendworks/:id", authenticateToken, mobileController.updateSendWork);
 app.get("/mobile/sendworks/finishedworks", authenticateToken, mobileController.getFinishedSendWorks);
 app.post('/mobile/savebillbook', authenticateToken, billOfQuantities.saveBillOfQuantities);
+app.post('/mobile/sendworks/export', authenticateToken, mobileController.exportWorks);
+app.get("/mobile/sendworks/history", authenticateToken, mobileController.getSendWorksHistory);
+app.post('/mobile/objects/:id/backup', authenticateToken, mobileController.backupObject);
+
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('🧨 Unhandled Rejection:', reason);

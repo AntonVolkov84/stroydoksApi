@@ -460,8 +460,10 @@ export const updateStatus = async (req, res) => {
     if (!status) {
       return res.status(400).json({ error: "Не указан статус" });
     }
-
-    await pool.query("UPDATE send_works SET status = $1 WHERE id = $2", [status, id]);
+    await pool.query(
+      "UPDATE send_works SET status = $1, updated_at = NOW() WHERE id = $2",
+      [status, id]
+    );
     res.json({ message: "Статус обновлён" });
   } catch (err) {
     console.error("updateStatus error:", err);
@@ -518,15 +520,97 @@ export const getFinishedSendWorks = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+export const getSendWorksHistory = async (req, res) => {
+  try {
+    const workerId = req.user.id;
 
+    const query = `
+      SELECT sw.*, o.title AS object_title
+      FROM send_works sw
+      JOIN objects o ON sw.object_id = o.id
+      WHERE sw.worker_id = $1
+      ORDER BY sw.created_at DESC
+    `;
 
+    const { rows } = await pool.query(query, [workerId]);
+    res.json(rows);
+  } catch (err) {
+    console.error("getSendWorksHistory error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+export const exportWorks = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { object_id } = req.body;
+    if (!object_id) {
+      return res.status(400).json({ error: "Не указан объект (источник экспорта)" });
+    }
+    const { rows: works } = await pool.query(
+      "SELECT title, unit, quantity FROM send_works WHERE object_id = $1",
+      [object_id]
+    );
+    if (works.length === 0) {
+      return res.status(404).json({ error: "Нет работ для экспорта" });
+    }
+    const values = works
+      .map(
+        (_, i) =>
+          `($${i * 4 + 1}, $${i * 4 + 2}, $${i * 4 + 3}, $${i * 4 + 4}, NOW(), NOW())`
+      )
+      .join(",");
+    const params = works.flatMap((w) => [userId, w.title, w.unit, w.quantity]);
+    await pool.query(
+      `INSERT INTO pending_works (worker_id, title, unit, quantity, created_at, updated_at)
+       VALUES ${values}`,
+      params
+    );
 
-
-
-
-
-
-
-
-
-
+    res.json({ message: "Работы успешно экспортированы пользователю" });
+  } catch (err) {
+    console.error("exportWorks error:", err);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+};
+export const backupObject = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { object_id } = req.body;
+    if (!object_id) {
+      return res.status(400).json({ error: "Не указан object_id" });
+    }
+     const { rows: objectRows } = await pool.query(
+      "SELECT title FROM objects WHERE id = $1",
+      [object_id]
+    );
+    if (!objectRows.length) {
+      return res.status(404).json({ error: "Объект не найден" });
+    }
+    const objectTitle = objectRows[0].title;
+    const { rows: works } = await pool.query(
+      "SELECT title, unit, quantity FROM send_works WHERE object_id = $1",
+      [object_id]
+    );
+    if (!works.length) {
+      return res.status(404).json({ error: "Нет работ для сохранения" });
+    }
+   const payload = {
+      userId,
+      title: `Все работы по объекту - ${objectTitle}. Удаление`,
+      rows: works.map(w => ({
+        name: w.title,
+        unit: w.unit,
+        quantity: String(w.quantity)
+      }))
+    };
+    await pool.query(
+      `INSERT INTO saved_billofquantities (userid, title, rows)
+       VALUES ($1, $2, $3)`,
+      [payload.userId, payload.title, JSON.stringify(payload.rows)]
+    );
+    res.json({ message: "Работы успешно сохранены на сайте" });
+  } catch (err) {
+    console.error("backupObject error:", err);
+    res.status(500).json({ error: "Ошибка сервера при сохранении работ" });
+  }
+};
