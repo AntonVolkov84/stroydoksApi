@@ -524,11 +524,12 @@ export const getFinishedSendWorks = async (req, res) => {
 export const getSendWorksHistory = async (req, res) => {
   try {
     const workerId = req.user.id;
-
     const query = `
-      SELECT sw.*, o.title AS object_title
+      SELECT 
+        sw.*, 
+        COALESCE(o.title, 'Нет еще') AS object_title
       FROM send_works sw
-      JOIN objects o ON sw.object_id = o.id
+      LEFT JOIN objects o ON sw.object_id = o.id
       WHERE sw.worker_id = $1
       ORDER BY sw.created_at DESC
     `;
@@ -540,6 +541,7 @@ export const getSendWorksHistory = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 export const exportWorks = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -593,7 +595,8 @@ export const backupObject = async (req, res) => {
       [object_id]
     );
     if (!works.length) {
-      return res.status(404).json({ error: "Нет работ для сохранения" });
+      console.log(`backupObject: у объекта ${object_id} нет работ — бэкап пропущен`);
+      return res.json({ message: "Нет работ для сохранения, бэкап не требуется" });
     }
    const payload = {
       userId,
